@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — Lar Bola de Pelos</title>
+  <link rel="icon" type="image/jpeg" href="images/logo.jpeg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* ===== ADMIN RESET ===== */
+    body { background: var(--bg-alt); }
+
+    /* ===== LOGIN ===== */
+    .login-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #1A4A46 0%, #1E6B65 55%, var(--verde-light) 100%);
+    }
+    .login-box {
+      background: var(--white);
+      border-radius: var(--r-xl);
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-xl);
+      text-align: center;
+    }
+    .login-logo { font-size: 2.5rem; margin-bottom: 8px; }
+    .login-box h1 { font-size: 1.5rem; color: var(--dark); margin-bottom: 4px; }
+    .login-box p  { color: var(--muted); font-size: .9rem; margin-bottom: 32px; }
+    .login-err {
+      background: #FFF0F0; color: #C0392B;
+      border-radius: var(--r-md); padding: 10px 14px;
+      font-size: .88rem; margin-bottom: 16px; display: none;
+    }
+    .login-err.show { display: block; }
+
+    /* ===== ADMIN LAYOUT ===== */
+    .admin-wrap { display: none; min-height: 100vh; }
+    .admin-wrap.show { display: flex; flex-direction: column; }
+
+    .admin-header {
+      background: var(--white);
+      border-bottom: 2px solid var(--border);
+      padding: 0 32px;
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+    .admin-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .admin-logo img { height: 36px; }
+    .admin-logo span { font-weight: 900; font-size: 1.1rem; color: var(--dark); }
+    .admin-logo em { color: var(--primary); font-style: normal; }
+    .admin-badge {
+      background: var(--primary-pale); color: var(--primary-dark);
+      font-size: .72rem; font-weight: 800; padding: 3px 10px;
+      border-radius: var(--r-full); letter-spacing: .04em; text-transform: uppercase;
+    }
+    .admin-user { display: flex; align-items: center; gap: 12px; }
+    .admin-user-email { font-size: .85rem; color: var(--muted); }
+
+    .admin-body {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 32px 24px;
+    }
+
+    /* ===== PAGE TITLE ===== */
+    .admin-page-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .admin-page-title h2 { font-size: 1.6rem; color: var(--dark); }
+    .admin-page-title p  { color: var(--muted); font-size: .9rem; margin-top: 2px; }
+
+    /* ===== STATS CARDS ===== */
+    .admin-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .astat {
+      background: var(--white);
+      border-radius: var(--r-md);
+      padding: 20px 24px;
+      border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px;
+    }
+    .astat-icon {
+      width: 48px; height: 48px;
+      border-radius: var(--r-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; flex-shrink: 0;
+    }
+    .astat-icon.pink  { background: var(--primary-pale); }
+    .astat-icon.verde { background: var(--verde-pale); }
+    .astat-icon.gold  { background: var(--gold-light); }
+    .astat-num { font-size: 1.8rem; font-weight: 900; color: var(--dark); line-height: 1; }
+    .astat-label { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+
+    /* ===== TABLE ===== */
+    .admin-table-wrap {
+      background: var(--white);
+      border-radius: var(--r-lg);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .admin-table-head {
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .admin-table-head h3 { font-size: 1rem; color: var(--dark); }
+    .admin-search {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: var(--r-full); padding: 8px 16px;
+      font-family: inherit; font-size: .9rem; color: var(--text);
+      width: 220px; transition: border-color var(--t-fast);
+    }
+    .admin-search input { border: none; background: transparent; outline: none;
+      font-family: inherit; font-size: .9rem; color: var(--text); width: 100%; }
+    .admin-search:focus-within { border-color: var(--primary); }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      text-align: left; padding: 12px 20px;
+      font-size: .78rem; font-weight: 800; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .06em;
+      background: var(--bg-alt); border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid var(--bg-alt); transition: background var(--t-fast); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg); }
+    td { padding: 14px 20px; font-size: .9rem; color: var(--text); vertical-align: middle; }
+
+    .tcat-photo {
+      width: 52px; height: 52px;
+      border-radius: var(--r-md); overflow: hidden;
+      background: linear-gradient(135deg, var(--verde), var(--primary));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; flex-shrink: 0;
+    }
+    .tcat-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .tcat-name-wrap { display: flex; align-items: center; gap: 12px; }
+    .tcat-name { font-weight: 800; color: var(--dark); }
+    .tcat-age  { font-size: .8rem; color: var(--muted); }
+
+    .badge {
+      display: inline-block; padding: 3px 10px;
+      border-radius: var(--r-full); font-size: .75rem; font-weight: 700;
+    }
+    .badge-femea   { background: #FCE4EC; color: #C2185B; }
+    .badge-macho   { background: #E3F2FD; color: #1565C0; }
+    .badge-ok      { background: var(--verde-pale); color: var(--verde-dark); }
+    .badge-off     { background: #FFF3E0; color: #E65100; }
+    .badge-adocao  { background: var(--primary-pale); color: var(--primary-dark); }
+    .badge-apadri  { background: var(--gold-light); color: #8B6200; }
+    .badge-ambos   { background: var(--bg-alt); color: var(--muted); }
+
+    .tcat-actions { display: flex; gap: 8px; }
+    .act-btn {
+      width: 34px; height: 34px; border-radius: var(--r-sm);
+      border: 1.5px solid var(--border); background: var(--white);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all var(--t-fast); color: var(--muted); font-size: .85rem;
+    }
+    .act-btn:hover.edit { border-color: var(--primary); color: var(--primary); background: var(--primary-pale); }
+    .act-btn:hover.del  { border-color: #E53E3E; color: #E53E3E; background: #FFF5F5; }
+
+    .empty-table {
+      padding: 64px 24px; text-align: center; color: var(--muted);
+    }
+    .empty-table i { font-size: 3rem; display: block; margin-bottom: 12px; opacity: .4; }
+    .empty-table p { font-size: .95rem; }
+
+    /* ===== MODAL ===== */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(19,64,64,.6);
+      backdrop-filter: blur(4px);
+      z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      opacity: 0; pointer-events: none;
+      transition: opacity var(--t-base);
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--white);
+      border-radius: var(--r-xl);
+      width: 100%; max-width: 600px;
+      max-height: 92vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-xl);
+      transform: translateY(20px) scale(.97);
+      transition: transform var(--t-base);
+    }
+    .modal-backdrop.open .modal { transform: translateY(0) scale(1); }
+    .modal-header {
+      padding: 24px 28px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-header h3 { font-size: 1.2rem; color: var(--dark); }
+    .modal-close {
+      width: 36px; height: 36px; border-radius: 50%;
+      border: 1.5px solid var(--border); background: transparent;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--muted); transition: all var(--t-fast); font-size: 1rem;
+    }
+    .modal-close:hover { background: var(--primary-pale); border-color: var(--primary); color: var(--primary); }
+    .modal-body { padding: 24px 28px; }
+    .modal-footer {
+      padding: 16px 28px 24px;
+      display: flex; gap: 12px; justify-content: flex-end;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ===== FORM ===== */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label {
+      display: block; font-size: .82rem; font-weight: 800;
+      color: var(--dark); margin-bottom: 6px;
+    }
+    .form-control {
+      width: 100%; padding: 10px 14px;
+      border: 1.5px solid var(--border); border-radius: var(--r-md);
+      font-family: inherit; font-size: .9rem; color: var(--text);
+      background: var(--white); transition: border-color var(--t-fast);
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--primary); }
+    textarea.form-control { resize: vertical; min-height: 90px; line-height: 1.5; }
+    select.form-control { appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%235A8E8B' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+    /* Tags checkbox grid */
+    .tags-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+    }
+    .tag-check { display: none; }
+    .tag-check + label {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 12px; border-radius: var(--r-md);
+      border: 1.5px solid var(--border); background: var(--bg);
+      font-size: .82rem; font-weight: 700; cursor: pointer;
+      transition: all var(--t-fast); color: var(--muted);
+    }
+    .tag-check:checked + label {
+      border-color: var(--primary); background: var(--primary-pale);
+      color: var(--primary-dark);
+    }
+
+    /* Photo upload */
+    .photo-drop {
+      border: 2px dashed var(--border);
+      border-radius: var(--r-lg);
+      padding: 28px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--t-base);
+      position: relative;
+      background: var(--bg);
+    }
+    .photo-drop:hover, .photo-drop.drag { border-color: var(--primary); background: var(--primary-pale); }
+    .photo-drop input[type="file"] {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      opacity: 0; cursor: pointer;
+    }
+    .photo-drop-icon { font-size: 2.2rem; margin-bottom: 8px; }
+    .photo-drop p { font-size: .88rem; color: var(--muted); }
+    .photo-drop strong { color: var(--primary); }
+    .photo-preview-wrap { margin-top: 14px; display: none; }
+    .photo-preview-wrap.show { display: block; }
+    .photo-preview {
+      width: 100%; max-height: 220px; object-fit: cover;
+      border-radius: var(--r-md); box-shadow: var(--shadow-sm);
+    }
+    .photo-remove {
+      margin-top: 8px; background: none; border: none;
+      color: #E53E3E; font-size: .85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+    .photo-remove:hover { text-decoration: underline; }
+
+    /* Upload progress */
+    .upload-bar-wrap {
+      margin-top: 10px; display: none;
+      background: var(--bg-alt); border-radius: var(--r-full); overflow: hidden; height: 6px;
+    }
+    .upload-bar-wrap.show { display: block; }
+    .upload-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, var(--verde), var(--primary));
+      transition: width .3s ease;
+    }
+
+    /* Disponível toggle */
+    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
+    .toggle {
+      position: relative; width: 48px; height: 26px;
+      border-radius: var(--r-full); cursor: pointer;
+    }
+    .toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0;
+      background: var(--border); border-radius: var(--r-full);
+      transition: background var(--t-base);
+    }
+    .toggle input:checked ~ .toggle-track { background: var(--verde); }
+    .toggle-thumb {
+      position: absolute; top: 3px; left: 3px;
+      width: 20px; height: 20px; background: var(--white);
+      border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+      transition: transform var(--t-base);
+    }
+    .toggle input:checked ~ .toggle-thumb { transform: translateX(22px); }
+    .toggle-label { font-size: .88rem; font-weight: 700; color: var(--text); }
+
+    /* Save feedback */
+    .save-err {
+      color: #C0392B; font-size: .85rem; display: none;
+      background: #FFF0F0; padding: 8px 14px; border-radius: var(--r-md); margin-bottom: 12px;
+    }
+    .save-err.show { display: block; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .form-row { grid-template-columns: 1fr; }
+      .admin-header { padding: 0 16px; }
+      .admin-body { padding: 20px 16px; }
+      .admin-table-head { flex-direction: column; align-items: flex-start; }
+      .admin-search { width: 100%; }
+      td:nth-child(4), th:nth-child(4),
+      td:nth-child(5), th:nth-child(5) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======= LOGIN ======= -->
+  <div class="login-wrap" id="loginWrap">
+    <div class="login-box">
+      <div class="login-logo">🐱</div>
+      <h1>Área Administrativa</h1>
+      <p>Lar Bola de Pelos — acesso restrito</p>
+      <div class="login-err" id="loginErr"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>E-mail</label>
+          <input type="email" class="form-control" id="loginEmail" placeholder="admin@exemplo.com" required>
+        </div>
+        <div class="form-group" style="margin-bottom: 24px;">
+          <label>Senha</label>
+          <input type="password" class="form-control" id="loginPass" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;" id="loginBtn">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Entrar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======= ADMIN PANEL ======= -->
+  <div class="admin-wrap" id="adminWrap">
+
+    <!-- Header -->
+    <header class="admin-header">
+      <a href="index.html" class="admin-logo" target="_blank">
+        <img src="images/logo.png" alt="Lar Bola de Pelos" onerror="this.style.display='none'">
+        <span>Lar <em>Bola de Pelos</em></span>
+        <span class="admin-badge">Admin</span>
+      </a>
+      <div class="admin-user">
+        <span class="admin-user-email" id="adminEmail"></span>
+        <button class="btn btn-ghost btn-sm" id="logoutBtn">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Sair
+        </button>
+      </div>
+    </header>
+
+    <!-- Body -->
+    <main class="admin-body">
+
+      <!-- Title + Add button -->
+      <div class="admin-page-title">
+        <div>
+          <h2>Gestão de Gatinhos</h2>
+          <p>Cadastre, edite e gerencie os gatos do abrigo.</p>
+        </div>
+        <button class="btn btn-primary" id="addCatBtn">
+          <i class="fa-solid fa-plus"></i> Novo Gatinho
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="admin-stats">
+        <div class="astat">
+          <div class="astat-icon pink">🐱</div>
+          <div><div class="astat-num" id="statTotal">—</div><div class="astat-label">Total</div></div>
+        </div>
+        <div class="astat">
+          <div class="astat-icon verde">✅</div>
+          <div><div class="astat-num" id="statDisp">—</div><div class="astat-label">Disponíveis</div></div>
+        </div>
+        <div class="astat">
+          <div class="astat-icon gold">🏠</div>
+          <div><div class="astat-num" id="statAdot">—</div><div class="astat-label">Para adoção</div></div>
+        </div>
+        <div class="astat">
+          <div class="astat-icon pink">⭐</div>
+          <div><div class="astat-num" id="statPadr">—</div><div class="astat-label">Para apadrinhar</div></div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="admin-table-wrap">
+        <div class="admin-table-head">
+          <h3>Todos os gatinhos</h3>
+          <div class="admin-search">
+            <i class="fa-solid fa-magnifying-glass" style="color:var(--muted); font-size:.85rem;"></i>
+            <input type="text" id="searchInput" placeholder="Buscar por nome...">
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table id="catTable">
+            <thead>
+              <tr>
+                <th>Gato</th>
+                <th>Gênero</th>
+                <th>Modo</th>
+                <th>Disponível</th>
+                <th style="text-align:right;">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="catTableBody">
+              <tr><td colspan="5"><div class="empty-table"><i class="fa-solid fa-circle-notch fa-spin"></i><p>Carregando...</p></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ======= MODAL ADD/EDIT ======= -->
+  <div class="modal-backdrop" id="modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h3 id="modalTitle">Novo Gatinho</h3>
+        <button class="modal-close" id="modalClose"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="catForm">
+        <div class="modal-body">
+
+          <!-- Foto -->
+          <div class="form-group">
+            <label>Foto</label>
+            <div class="photo-drop" id="photoDrop">
+              <input type="file" id="photoInput" accept="image/*" capture="environment">
+              <div class="photo-drop-icon">📷</div>
+              <p><strong>Toque para adicionar foto</strong><br>ou arraste aqui</p>
+            </div>
+            <div class="photo-preview-wrap" id="previewWrap">
+              <img class="photo-preview" id="photoPreview" src="" alt="Preview">
+              <button type="button" class="photo-remove" id="photoRemove">
+                <i class="fa-solid fa-trash"></i> Remover foto
+              </button>
+            </div>
+            <div class="upload-bar-wrap" id="uploadBarWrap">
+              <div class="upload-bar" id="uploadBar"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome <span style="color:var(--primary)">*</span></label>
+              <input type="text" class="form-control" id="fNome" placeholder="Ex: Luna" required>
+            </div>
+            <div class="form-group">
+              <label>Idade <span style="color:var(--primary)">*</span></label>
+              <input type="text" class="form-control" id="fIdade" placeholder="Ex: 2 anos / 6 meses" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Gênero <span style="color:var(--primary)">*</span></label>
+              <select class="form-control" id="fGenero" required>
+                <option value="">Selecione</option>
+                <option value="femea">♀ Fêmea</option>
+                <option value="macho">♂ Macho</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Porte</label>
+              <select class="form-control" id="fPorte">
+                <option value="Pequeno">Pequeno</option>
+                <option value="Médio" selected>Médio</option>
+                <option value="Grande">Grande</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Aparece em</label>
+            <select class="form-control" id="fModo">
+              <option value="ambos">Adoção e Apadrinhamento</option>
+              <option value="adocao">Somente Adoção</option>
+              <option value="apadrinhamento">Somente Apadrinhamento</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Descrição</label>
+            <textarea class="form-control" id="fDesc" placeholder="Conte um pouco sobre a personalidade do gatinho..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Tags de personalidade</label>
+            <div class="tags-grid">
+              <input type="checkbox" class="tag-check" id="tc1" value="carinhosa"><label for="tc1">❤️ Carinhosa</label>
+              <input type="checkbox" class="tag-check" id="tc2" value="brincalhona"><label for="tc2">🎾 Brincalhona</label>
+              <input type="checkbox" class="tag-check" id="tc3" value="independente"><label for="tc3">🦁 Independente</label>
+              <input type="checkbox" class="tag-check" id="tc4" value="sociavel"><label for="tc4">🤝 Sociável</label>
+              <input type="checkbox" class="tag-check" id="tc5" value="timida"><label for="tc5">🙈 Tímida</label>
+              <input type="checkbox" class="tag-check" id="tc6" value="docil"><label for="tc6">🌸 Dócil</label>
+              <input type="checkbox" class="tag-check" id="tc7" value="energetica"><label for="tc7">⚡ Energética</label>
+              <input type="checkbox" class="tag-check" id="tc8" value="reservada"><label for="tc8">🌙 Reservada</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Status</label>
+            <div class="toggle-wrap">
+              <label class="toggle">
+                <input type="checkbox" id="fDisponivel" checked>
+                <span class="toggle-track"></span>
+                <span class="toggle-thumb"></span>
+              </label>
+              <span class="toggle-label" id="toggleLabel">Disponível</span>
+            </div>
+          </div>
+
+          <div class="save-err" id="saveErr"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" id="cancelBtn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="saveBtn">
+            <i class="fa-solid fa-floppy-disk"></i> Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
