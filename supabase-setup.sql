@@ -1,6 +1,5 @@
 -- =========================================================
 -- LAR BOLA DE PELOS — Supabase Setup
--- Execute no SQL Editor do Supabase Dashboard
 -- =========================================================
 
 -- Tabela de gatos
@@ -41,8 +40,6 @@ CREATE POLICY "admin_escrita" ON gatos
 
 -- =========================================================
 -- Storage bucket para fotos
--- Execute DEPOIS de criar o bucket manualmente no dashboard
--- Storage → New Bucket → name: "gatos" → Public bucket ✓
 -- =========================================================
 
 -- Permite leitura pública das fotos
@@ -60,7 +57,7 @@ CREATE POLICY "fotos_admin_delete" ON storage.objects
   FOR DELETE USING (bucket_id = 'gatos' AND auth.role() = 'authenticated');
 
 -- =========================================================
--- Dados de exemplo (opcional — pode deletar depois)
+-- Dados de exemplo
 -- =========================================================
 INSERT INTO gatos (nome, idade, genero, porte, descricao, tags, disponivel, modo) VALUES
 ('Luna',     '2 anos',  'femea', 'Médio',   'Luna é uma gatinha encantadora que adora receber carinho e brincar com bolinhas.',   ARRAY['carinhosa','brincalhona'], true, 'ambos'),

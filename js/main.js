@@ -197,7 +197,7 @@ function renderCats(container, cats, mode = 'adocao') {
           ? `<img src="${cat.photoUrl}" alt="${cat.name}" class="cat-photo-img">`
           : `<span class="cat-emoji">${cat.emoji}</span>`}
         <div class="cat-overlay"></div>
-        <button class="btn btn-sm btn-ghost cat-quick-btn">${btnLabel}</button>
+        <button class="btn btn-sm btn-ghost cat-quick-btn" data-cat-name="${cat.name}" data-mode="${mode}">${btnLabel}</button>
         <span class="cat-gender ${cat.gender}">${cat.gender === 'femea' ? '♀ Fêmea' : '♂ Macho'}</span>
       </div>
       <div class="cat-info">
@@ -211,7 +211,7 @@ function renderCats(container, cats, mode = 'adocao') {
           ${cat.tags.map(t => `<span class="cat-tag ${TAG_CLASS[t] || 'tag-default'}">${TAG_LABEL[t] || t}</span>`).join('')}
         </div>
       </div>
-      <button class="cat-card-btn ${btnClass}">
+      <button class="cat-card-btn ${btnClass}" data-cat-name="${cat.name}" data-mode="${mode}">
         <i class="fa-solid ${btnIcon}"></i> ${btnLabel}
       </button>
     </div>
@@ -274,6 +274,167 @@ async function initFeaturedCats() {
   const cats = await fetchCats();
   renderCats(grid, cats.slice(0, 3), 'adocao');
   reinitReveal();
+}
+
+/* ---------------------------------------------------------
+   CAT ACTION MODAL
+   --------------------------------------------------------- */
+function injectCatModal() {
+  if (document.getElementById('cat-modal')) return;
+  const el = document.createElement('div');
+  el.className = 'cat-modal-overlay';
+  el.id = 'cat-modal';
+  el.innerHTML = `
+    <div class="cat-modal" role="dialog" aria-modal="true">
+      <button class="cat-modal-close" aria-label="Fechar"><i class="fa-solid fa-xmark"></i></button>
+      <div class="cat-modal-header">
+        <div class="cat-modal-icon" id="modal-icon"></div>
+        <h3 class="cat-modal-title" id="modal-title"></h3>
+        <p class="cat-modal-sub">Preencha o formulário e a gente entra em contato!</p>
+      </div>
+      <form id="cat-action-form" novalidate>
+        <div class="form-group">
+          <label for="modal-name">Nome completo *</label>
+          <input type="text" id="modal-name" required placeholder="Seu nome">
+        </div>
+        <div class="form-group">
+          <label for="modal-phone">WhatsApp *</label>
+          <input type="tel" id="modal-phone" required placeholder="(00) 00000-0000">
+        </div>
+        <div class="form-group">
+          <label for="modal-email">E-mail</label>
+          <input type="email" id="modal-email" placeholder="seu@email.com">
+        </div>
+        <div class="form-group" id="modal-animals-group">
+          <label for="modal-animals">Tem outros animais em casa?</label>
+          <select id="modal-animals">
+            <option value="">Selecione</option>
+            <option value="Não tenho outros animais">Não tenho</option>
+            <option value="Tenho outros gatos">Sim, tenho gatos</option>
+            <option value="Tenho cachorros">Sim, tenho cachorros</option>
+            <option value="Tenho outros animais">Sim, outros animais</option>
+          </select>
+        </div>
+        <div class="form-group" id="modal-amount-group" style="display:none;">
+          <label for="modal-amount">Contribuição mensal pretendida</label>
+          <select id="modal-amount">
+            <option value="A partir de R$ 30/mês">A partir de R$ 30/mês</option>
+            <option value="R$ 50/mês">R$ 50/mês</option>
+            <option value="R$ 100/mês">R$ 100/mês</option>
+            <option value="A combinar">A combinar</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="modal-message">Mensagem (opcional)</label>
+          <textarea id="modal-message" placeholder="Conte um pouco sobre você..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" id="modal-submit" style="width:100%;justify-content:center;">
+          <i class="fa-brands fa-whatsapp"></i> Enviar pelo WhatsApp
+        </button>
+      </form>
+      <div class="modal-success" id="modal-success" style="display:none;">
+        <div class="success-icon">🐾</div>
+        <h3>Mensagem enviada!</h3>
+        <p>O WhatsApp foi aberto com sua mensagem. Continue a conversa por lá!</p>
+      </div>
+    </div>`;
+  document.body.appendChild(el);
+
+  const overlay = el;
+  const closeBtn = el.querySelector('.cat-modal-close');
+
+  function closeModal() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+}
+
+function openCatModal(catName, mode) {
+  const overlay = document.getElementById('cat-modal');
+  if (!overlay) return;
+
+  const isAdocao = mode === 'adocao';
+
+  overlay.querySelector('#modal-icon').textContent  = isAdocao ? '🐱' : '⭐';
+  overlay.querySelector('#modal-title').textContent = isAdocao
+    ? `Quero adotar ${catName}`
+    : `Quero apadrinhar ${catName}`;
+
+  overlay.querySelector('#modal-animals-group').style.display = isAdocao ? '' : 'none';
+  overlay.querySelector('#modal-amount-group').style.display  = isAdocao ? 'none' : '';
+
+  const submitBtn = overlay.querySelector('#modal-submit');
+  submitBtn.className = `btn btn-lg ${isAdocao ? 'btn-primary' : 'btn-gold'}`;
+  submitBtn.style.cssText = 'width:100%;justify-content:center;';
+
+  overlay.querySelector('#cat-action-form').style.display = '';
+  overlay.querySelector('#modal-success').style.display   = 'none';
+  overlay.querySelector('#modal-name').value    = '';
+  overlay.querySelector('#modal-phone').value   = '';
+  overlay.querySelector('#modal-email').value   = '';
+  overlay.querySelector('#modal-message').value = '';
+
+  overlay.querySelector('#cat-action-form').onsubmit = e => {
+    e.preventDefault();
+    const name    = overlay.querySelector('#modal-name').value.trim();
+    const phone   = overlay.querySelector('#modal-phone').value.trim();
+    const email   = overlay.querySelector('#modal-email').value.trim();
+    const message = overlay.querySelector('#modal-message').value.trim();
+
+    if (!name || !phone) {
+      overlay.querySelector('#modal-name').reportValidity();
+      return;
+    }
+
+    let lines;
+    if (isAdocao) {
+      const animals = overlay.querySelector('#modal-animals').value;
+      lines = [
+        '🐱 *Interesse em Adoção — Lar Bola de Pelos*', '',
+        `*Gatinho:* ${catName}`,
+        `*Nome:* ${name}`,
+        `*WhatsApp:* ${phone}`,
+        email   ? `*E-mail:* ${email}`   : null,
+        animals ? `*Outros animais:* ${animals}` : null,
+        message ? `\n*Mensagem:*\n${message}` : null,
+      ];
+    } else {
+      const amount = overlay.querySelector('#modal-amount').value;
+      lines = [
+        '⭐ *Interesse em Apadrinhamento — Lar Bola de Pelos*', '',
+        `*Gatinho:* ${catName}`,
+        `*Nome:* ${name}`,
+        `*WhatsApp:* ${phone}`,
+        email  ? `*E-mail:* ${email}`  : null,
+        amount ? `*Contribuição:* ${amount}` : null,
+        message ? `\n*Mensagem:*\n${message}` : null,
+      ];
+    }
+
+    const text = encodeURIComponent(lines.filter(l => l !== null).join('\n'));
+    window.open(`https://wa.me/5581999204111?text=${text}`, '_blank', 'noopener');
+
+    overlay.querySelector('#cat-action-form').style.display = 'none';
+    overlay.querySelector('#modal-success').style.display   = '';
+  };
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function initCatModal() {
+  injectCatModal();
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.cat-card-btn, .cat-quick-btn');
+    if (!btn) return;
+    const catName = btn.dataset.catName;
+    const mode    = btn.dataset.mode;
+    if (catName && mode) openCatModal(catName, mode);
+  });
 }
 
 /* ---------------------------------------------------------
@@ -356,6 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initScrollReveal();
   initPixCopy();
   initContactForm();
+  initCatModal();
   document.querySelectorAll('.footer-year').forEach(el => el.textContent = new Date().getFullYear());
 
   const page = location.pathname.split('/').pop() || 'index.html';
